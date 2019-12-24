@@ -7,61 +7,47 @@
   [& args]
   (println "Hello, World!"))
 
-(defn square
-  [x] (* x x))
-
-(defn cube
-  [x] (* x x x))
-
-(defn good-enough?
-  [guess x fun]
+(defn tolerance?
+  "abstraction for recursive approximations"
+  [x fun guess]
   (<
    (math/abs (- (fun guess) x))
    0.000000000001))
 
-(defn average
-  [x y]
-  (/ (+ x y) 2))
-
-(defn improve
-  "((y + (y / x))  / x)
-  y is the guess, x the input"
-  [y x]
-  (average  y (/ x y)))
-
-(defn improve-cube
-  "((x / y^2) + 2y) / 3
-  y is the guess, x the input"
-  [y x]
-  (/
-   (+
-    (* 2 y)
-    (/ x (* y y)))
-   3))
-
-(defn sqrt-iter
-  [guess x]
-  (cond
-    (good-enough? guess x square)
-    guess
-    :else
-    (recur (improve guess x)
-           x)))
-
 (defn sqrt
   [x]
-  (sqrt-iter 1.0 x))
-
-(defn cube-root-iter
-  [guess x]
-  (cond
-    (good-enough? guess x cube)
-    guess
-    :else
-    (recur
-     (improve-cube guess x)
-     x)))
+  (letfn
+   [(good-enough? [guess]
+      (tolerance? x #(* % %) guess))
+    (improve [guess]
+             (/ (+ guess (/ x guess)) 2))
+    (sqrt-iter [guess]
+               (cond
+                 (good-enough? guess)
+                 guess
+                 :else
+                 (recur (improve guess))))]
+    (sqrt-iter 1.0)))
 
 (defn cube-root
   [x]
-  (cube-root-iter 1.0 x))
+  (letfn [(good-enough? [guess]
+            (tolerance? x #(* % % %) guess))
+          (improve [guess]
+                   (/ (+ (* 2 guess) (/ x (* guess guess))) 3))
+          (iter [guess]
+                (cond
+                  (good-enough? guess)
+                  guess
+                  :else
+                  (recur
+                   (improve guess))))]
+    (iter 1.0)))
+
+(defn ackerman
+  [x y]
+  (cond (= y 0) 0
+        (= x 0) (* 2 y)
+        (= y 1) 2
+        :else (recur (- x 1)
+                     (ackerman x (- y 1)))))
